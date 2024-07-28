@@ -58,17 +58,16 @@ const PasswordForm = ({email}) => {
       inputField.cpassword !== '' &&
       inputField.password === inputField.cpassword
     ) {
-      const url = `https://mexpensebackend.onrender.com/users/forgotPasswordApp`;
-      let options = {
-        method: 'POST',
-        headers: {},
-        data: inputField,
-      };
+      const url = `https://expense365.vercel.app/api/verifyOtp`;
       try {
         setLoader(true);
-        let response = await axios(url, options);
+        let response = await axios.post(url, {
+          email: inputField.email,
+          code: inputField.otpCode,
+          password: inputField.password,
+        });
         let record = response.data;
-        if (record.statusText === 'Success') {
+        if (record.success) {
           await firestore()
             .collection('userteachersapp')
             .where('email', '==', inputField.email)

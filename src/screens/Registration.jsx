@@ -90,7 +90,7 @@ const Registration = () => {
     if (validForm()) {
       setVisible(true);
 
-      const backendUrl = `https://mexpensebackend.onrender.com/users/addApp`;
+      const backendUrl = `https://expense365.vercel.app/api/signUp`;
 
       try {
         let response = await axios.post(backendUrl, {
@@ -102,10 +102,8 @@ const Registration = () => {
           password: bcrypt.hashSync(inputField.password, 10),
           createdAt: inputField.createdAt,
         });
-        console.log(response.status);
-        if (response.status === 200) {
-          // uploads file
-
+        let record = response.data;
+        if (record.success) {
           await firestore()
             .collection('userteachersapp')
             .doc(docId)

@@ -30,17 +30,12 @@ const OTPForm = () => {
 
   const sendOtp = async () => {
     if (ValidateEmail(email)) {
-      const url = `https://mexpensebackend.onrender.com/users/emailSendApp`;
-      let options = {
-        method: 'POST',
-        url: url,
-        data: {email: email},
-      };
+      const url = `https://expense365.vercel.app/api/sendVerificationEmail`;
       try {
         setLoader(true);
-        let response = await axios(options);
+        let response = await axios.post(url, {email: email});
         let record = response.data;
-        if (record.statusText === 'Success') {
+        if (record.success) {
           showToast('success', record.message);
           showform(false);
           setLoader(false);
