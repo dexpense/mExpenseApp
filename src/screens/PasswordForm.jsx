@@ -58,7 +58,7 @@ const PasswordForm = ({email}) => {
       inputField.cpassword !== '' &&
       inputField.password === inputField.cpassword
     ) {
-      const url = `https://expense365.vercel.app/api/verifyOtp`;
+      const url = `https://expense365.vercel.app/api/verifyOtpAndPassword`;
       try {
         setLoader(true);
         let response = await axios.post(url, {
