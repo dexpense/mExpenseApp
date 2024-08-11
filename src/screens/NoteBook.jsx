@@ -71,7 +71,7 @@ const NoteBook = () => {
   const addNote = async () => {
     if (noteTitle && noteBody) {
       setShowLoader(true);
-      const userValues = JSON.parse(await EncryptedStorage.getItem('user'));
+
       let cipherTitle = CryptoJS.AES.encrypt(noteTitle, secretKey).toString();
       let cipherBody = CryptoJS.AES.encrypt(noteBody, secretKey).toString();
 
@@ -102,7 +102,7 @@ const NoteBook = () => {
                     id: docId,
                     noteTitle: cipherTitle,
                     noteBody: cipherBody,
-                    addedBy: userValues.id,
+                    addedBy: userID,
                     photoName: docId.split('-')[0] + '-' + photoName,
                     uri: url,
                   })
@@ -142,7 +142,7 @@ const NoteBook = () => {
             id: docId,
             noteTitle: cipherTitle,
             noteBody: cipherBody,
-            addedBy: userValues.id,
+            addedBy: userID,
             photoName: '',
             uri: '',
           })

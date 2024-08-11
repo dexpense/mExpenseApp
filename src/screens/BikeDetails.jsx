@@ -90,7 +90,7 @@ const BikeDetails = () => {
   const [transferingAdmin, setTransferingAdmin] = useState({});
   const [totalFuelCost, setTotalFuelCost] = useState('');
   const [totalFuelBuyed, setTotalFuelBuyed] = useState('');
-  const [petrolPrice, setPetrolPrice] = useState('103.9');
+  const [petrolPrice, setPetrolPrice] = useState('104.95');
   const [volume, setVolume] = useState(0);
   const [amount, setAmount] = useState(0);
 
@@ -143,7 +143,7 @@ const BikeDetails = () => {
           calculatedFuelingDistance: calculatedFuelingDistance,
         })
         .then(async () => {
-          setFuelingState([
+          const x = [
             ...fuelingState,
             {
               date: Date.parse(date),
@@ -161,7 +161,9 @@ const BikeDetails = () => {
               milageGot: milage,
               calculatedFuelingDistance: calculatedFuelingDistance,
             },
-          ]);
+          ].sort((a, b) => b.date - a.date);
+          setFuelingState(x);
+          setAllFueling(x.filter(el => el.bikeID === data.id));
           await firestore()
             .collection('bikes')
             .doc(data.id)
@@ -183,9 +185,11 @@ const BikeDetails = () => {
               thisVehicle.date = Date.now();
               thisVehicle.milage = milage;
 
-              setVehicleState([...exceptTargetVehile, thisVehicle]);
-              setStateObject(thisVehicle);
-              setData(thisVehicle);
+              const x = [...exceptTargetVehile, thisVehicle].sort(
+                (a, b) => b.date - a.date,
+              );
+              setVehicleState(x);
+
               if (transferingAdmin.id !== 'deviceDefaultAccount') {
                 await firestore()
                   .collection('accounts')
@@ -211,7 +215,11 @@ const BikeDetails = () => {
                     (a, b) => b.date - a.date,
                   ),
                 );
-
+                setAllAccounts(
+                  [...exceptTransferingAccount, thisTransferingAccount].sort(
+                    (a, b) => b.date - a.date,
+                  ),
+                );
                 await firestore()
                   .collection('transactions')
                   .doc(docId)
@@ -246,8 +254,16 @@ const BikeDetails = () => {
                 ]);
               }
               setShowLoader(false);
+              setData(thisVehicle);
+              setStateObject(thisVehicle);
+              setShowFuelAdd(!showFuelAdd);
+              setAddBtnClicked(false);
+              setTransferingAdmin(allAccounts);
+              setVolume('0');
+              setAmount('0');
+              setDate(new Date());
               showToast('success', 'Data Added Successfully');
-              setTimeout(() => navigation.navigate('Home'), 1500);
+              // setTimeout(() => navigation.navigate('Home'), 1500);
             })
             .catch(e => {
               setShowLoader(false);
@@ -422,6 +438,11 @@ const BikeDetails = () => {
                     (a, b) => b.date - a.date,
                   ),
                 );
+                setAllAccounts(
+                  [...exceptThisAccount, thisAccount].sort(
+                    (a, b) => b.date - a.date,
+                  ),
+                );
                 await firestore()
                   .collection('transactions')
                   .doc(targetFueling.id)
@@ -442,9 +463,11 @@ const BikeDetails = () => {
                             item => item.id !== targetFueling.id,
                           ),
                         );
+                        setData(thisVehicle);
+                        setStateObject(thisVehicle);
                         setShowLoader(false);
                         showToast('success', 'Data Deleted Successfully');
-                        setTimeout(() => navigation.navigate('Home'), 1500);
+                        // setTimeout(() => navigation.navigate('Home'), 1500);
                       })
                       .catch(e => {
                         setShowLoader(false);
@@ -467,9 +490,14 @@ const BikeDetails = () => {
                 setFuelingState(
                   fuelingState.filter(item => item.id !== targetFueling.id),
                 );
+                setAllFueling(
+                  fuelingState.filter(item => item.id !== targetFueling.id),
+                );
+                setData(thisVehicle);
+                setStateObject(thisVehicle);
                 setShowLoader(false);
                 showToast('success', 'Data Deleted Successfully');
-                setTimeout(() => navigation.navigate('Home'), 1500);
+                // setTimeout(() => navigation.navigate('Home'), 1500);
               })
               .catch(e => {
                 setShowLoader(false);
@@ -502,7 +530,7 @@ const BikeDetails = () => {
         })
         .then(async () => {
           const exceptTransferingAccount = accountState.filter(
-            item => item.id === transferingAdmin.id,
+            item => item.id !== transferingAdmin.id,
           );
           const thisTransferingAccount = accountState.filter(
             item => item.id === transferingAdmin.id,
@@ -517,7 +545,11 @@ const BikeDetails = () => {
               (a, b) => b.date - a.date,
             ),
           );
-
+          setAllAccounts(
+            [...exceptTransferingAccount, thisTransferingAccount].sort(
+              (a, b) => b.date - a.date,
+            ),
+          );
           await firestore()
             .collection('transactions')
             .doc(docId)
@@ -535,23 +567,25 @@ const BikeDetails = () => {
                 parseFloat(transferingAdmin.amount) - parseFloat(serviceCost),
             })
             .then(async () => {
-              setTransactionState([
-                ...transactionState,
-                {
-                  date: Date.parse(date),
-                  id: docId,
-                  accountName: transferingAdmin.accountName,
-                  accountID: transferingAdmin.id,
-                  addedBy: transferingAdmin.addedBy,
-                  amount: parseFloat(serviceCost),
-                  purpose: 'Vehicle Service',
-                  transactionType: 'Debit',
-                  previousAmount: parseFloat(transferingAdmin.amount),
-                  currentAmount:
-                    parseFloat(transferingAdmin.amount) -
-                    parseFloat(serviceCost),
-                },
-              ]);
+              setTransactionState(
+                [
+                  ...transactionState,
+                  {
+                    date: Date.parse(date),
+                    id: docId,
+                    accountName: transferingAdmin.accountName,
+                    accountID: transferingAdmin.id,
+                    addedBy: transferingAdmin.addedBy,
+                    amount: parseFloat(serviceCost),
+                    purpose: 'Vehicle Service',
+                    transactionType: 'Debit',
+                    previousAmount: parseFloat(transferingAdmin.amount),
+                    currentAmount:
+                      parseFloat(transferingAdmin.amount) -
+                      parseFloat(serviceCost),
+                  },
+                ].sort((a, b) => b.date - a.date),
+              );
               if (isEnabled) {
                 await firestore()
                   .collection('bikes')
@@ -576,12 +610,24 @@ const BikeDetails = () => {
                     thisVehicle.serviceCost = parseFloat(serviceCost);
                     thisVehicle.serviceDate = Date.parse(date);
                     thisVehicle.oilChangedAt = parseInt(servicedAtDistance);
-                    thisVehicle.nextOilChangeDistance =
-                      parseInt(servicedAtDistance) + parseInt(oilRun);
-                    setVehicleState([...exceptThisVehicle, thisVehicle]);
+                    thisVehicle.nextOilChangeDistance = parseInt(oilRun);
+                    setVehicleState(
+                      [...exceptThisVehicle, thisVehicle].sort(
+                        (a, b) => b.date - a.date,
+                      ),
+                    );
+                    setData(thisVehicle);
+                    setStateObject(thisVehicle);
+                    setServiceDone(false);
+                    setAddBtnClicked(false);
+                    setIsEnabled(false);
+                    setTransferingAdmin(allAccounts);
+                    setServicedAtDistance('');
+                    SetServiceCost('');
+                    setDate(new Date());
                     setShowLoader(false);
                     showToast('success', 'Data Added Successfully');
-                    setTimeout(() => navigation.navigate('Home'), 1500);
+                    // setTimeout(() => navigation.navigate('Home'), 1500);
                   })
                   .catch(e => {
                     setShowLoader(false);
@@ -607,10 +653,23 @@ const BikeDetails = () => {
                       parseInt(servicedAtDistance);
                     thisVehicle.serviceCost = parseFloat(serviceCost);
                     thisVehicle.serviceDate = Date.parse(date);
-                    setVehicleState([...exceptThisVehicle, thisVehicle]);
+                    setVehicleState(
+                      [...exceptThisVehicle, thisVehicle].sort(
+                        (a, b) => b.date - a.date,
+                      ),
+                    );
+                    setData(thisVehicle);
+                    setStateObject(thisVehicle);
+                    setServiceDone(false);
+                    setAddBtnClicked(false);
+                    setIsEnabled(false);
+                    setTransferingAdmin(allAccounts);
+                    setServicedAtDistance('');
+                    SetServiceCost('');
+                    setDate(new Date());
                     setShowLoader(false);
                     showToast('success', 'Data Added Successfully');
-                    setTimeout(() => navigation.navigate('Home'), 1500);
+                    // setTimeout(() => navigation.navigate('Home'), 1500);
                   })
                   .catch(e => {
                     setShowLoader(false);
@@ -649,10 +708,21 @@ const BikeDetails = () => {
             thisVehicle.oilChangedAt = parseInt(servicedAtDistance);
             thisVehicle.nextOilChangeDistance =
               parseInt(servicedAtDistance) + parseInt(oilRun);
-            setVehicleState([...exceptThisVehicle, thisVehicle]);
+            setVehicleState(
+              [...exceptThisVehicle, thisVehicle].sort(
+                (a, b) => b.date - a.date,
+              ),
+            );
+            setServiceDone(false);
+            setAddBtnClicked(false);
+            setIsEnabled(false);
+            setTransferingAdmin(allAccounts);
+            setServicedAtDistance('');
+            SetServiceCost('');
+            setDate(new Date());
             setShowLoader(false);
             showToast('success', 'Data Added Successfully');
-            setTimeout(() => navigation.navigate('Home'), 1500);
+            // setTimeout(() => navigation.navigate('Home'), 1500);
           })
           .catch(e => {
             setShowLoader(false);
@@ -677,10 +747,23 @@ const BikeDetails = () => {
             thisVehicle.servicedAtDistance = parseInt(servicedAtDistance);
             thisVehicle.serviceCost = parseFloat(serviceCost);
             thisVehicle.serviceDate = Date.parse(date);
-            setVehicleState([...exceptThisVehicle, thisVehicle]);
+            setVehicleState(
+              [...exceptThisVehicle, thisVehicle].sort(
+                (a, b) => b.date - a.date,
+              ),
+            );
+            setServiceDone(false);
+            setAddBtnClicked(false);
+            setIsEnabled(false);
+            setTransferingAdmin(allAccounts);
+            setServicedAtDistance('');
+            SetServiceCost('');
+            setDate(new Date());
             setShowLoader(false);
             showToast('success', 'Data Added Successfully');
-            setTimeout(() => navigation.navigate('Home'), 1500);
+            // setTimeout(() => navigation.navigate('Home'), 1500);
+            setData(thisVehicle);
+            setStateObject(thisVehicle);
           })
           .catch(e => {
             setShowLoader(false);

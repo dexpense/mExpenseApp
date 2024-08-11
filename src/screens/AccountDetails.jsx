@@ -45,6 +45,7 @@ import BottomBar from './BottomBar';
 const AccountDetails = () => {
   const {
     stateObject,
+    setStateObject,
     fuelingState,
     setFuelingState,
     transactionState,
@@ -55,7 +56,7 @@ const AccountDetails = () => {
 
   const isFocused = useIsFocused();
   const navigation = useNavigation();
-  let data = stateObject;
+  const [data, setData] = useState(stateObject);
   const fetchedAmount =
     data.amount < 0
       ? parseFloat(round2dec(data.amount * -1) * -1)
@@ -146,24 +147,48 @@ const AccountDetails = () => {
               : round2dec(fetchedAmount + parseFloat(amount)),
         })
         .then(async () => {
-          setTransactionState([
-            ...transactionState,
-            {
-              date: Date.parse(date),
-              id: docId,
-              accountName: data.accountName,
-              accountID: data.id,
-              addedBy: data.addedBy,
-              amount: round2dec(parseFloat(amount)),
-              purpose: purpose,
-              transactionType: transactionType,
-              previousAmount: fetchedAmount,
-              currentAmount:
-                transactionType === 'Debit'
-                  ? round2dec(fetchedAmount - parseFloat(amount))
-                  : round2dec(fetchedAmount + parseFloat(amount)),
-            },
-          ]);
+          setTransactionState(
+            [
+              ...transactionState,
+              {
+                date: Date.parse(date),
+                id: docId,
+                accountName: data.accountName,
+                accountID: data.id,
+                addedBy: data.addedBy,
+                amount: round2dec(parseFloat(amount)),
+                purpose: purpose,
+                transactionType: transactionType,
+                previousAmount: fetchedAmount,
+                currentAmount:
+                  transactionType === 'Debit'
+                    ? round2dec(fetchedAmount - parseFloat(amount))
+                    : round2dec(fetchedAmount + parseFloat(amount)),
+              },
+            ].sort((a, b) => b.date - a.date),
+          );
+          setAllTransactions(
+            [
+              ...transactionState,
+              {
+                date: Date.parse(date),
+                id: docId,
+                accountName: data.accountName,
+                accountID: data.id,
+                addedBy: data.addedBy,
+                amount: round2dec(parseFloat(amount)),
+                purpose: purpose,
+                transactionType: transactionType,
+                previousAmount: fetchedAmount,
+                currentAmount:
+                  transactionType === 'Debit'
+                    ? round2dec(fetchedAmount - parseFloat(amount))
+                    : round2dec(fetchedAmount + parseFloat(amount)),
+              },
+            ]
+              .filter(el => el.accountID === stateObject.id)
+              .sort((a, b) => b.date - a.date),
+          );
           await firestore()
             .collection('accounts')
             .doc(data.id)
@@ -194,8 +219,10 @@ const AccountDetails = () => {
                 ),
               );
               setShowLoader(false);
+              setData(thisAccount);
+              setStateObject(thisAccount);
               showToast('success', 'Data Added Successfully');
-              setTimeout(() => navigation.navigate('Home'), 1500);
+              // setTimeout(() => navigation.navigate('Home'), 1500);
               setDate(new Date());
             })
             .catch(e => {
@@ -421,7 +448,9 @@ const AccountDetails = () => {
           setTransactionState([...allTransactions, thisTransaction]);
           setShowLoader(false);
           showToast('success', 'Data Updated Successfully');
-          setTimeout(() => navigation.navigate('Home'), 1500);
+          setData(thisAccount);
+          setStateObject(thisAccount);
+          // setTimeout(() => navigation.navigate('Home'), 1500);
           setEditDate(new Date());
         })
         .catch(e => {
@@ -489,26 +518,30 @@ const AccountDetails = () => {
                 (a, b) => b.date - a.date,
               ),
             );
-            purpose === 'Fueling'
-              ? await firestore()
-                  .collection('fueling')
-                  .doc(id)
-                  .delete()
-                  .then(() => {
-                    setFuelingState(
-                      fuelingState.filter(item => item.id !== id),
-                    );
-                    setShowLoader(false);
-                    showToast('success', 'Data Deleted Successfully');
-                    setTimeout(() => navigation.navigate('Home'), 1500);
-                  })
-                  .catch(e => {
-                    setShowLoader(false);
-                    showToast('error', 'Data Deletation Failed');
-                  })
-              : setShowLoader(false);
-            showToast('success', 'Data Deleted Successfully');
-            setTimeout(() => navigation.navigate('Home'), 1500);
+            if (purpose === 'Fueling') {
+              await firestore()
+                .collection('fueling')
+                .doc(id)
+                .delete()
+                .then(() => {
+                  setFuelingState(fuelingState.filter(item => item.id !== id));
+                  setShowLoader(false);
+                  showToast('success', 'Data Deleted Successfully');
+                  setData(thisAccount);
+                  setStateObject(thisAccount);
+                  // setTimeout(() => navigation.navigate('Home'), 1500);
+                })
+                .catch(e => {
+                  setShowLoader(false);
+                  showToast('error', 'Data Deletation Failed');
+                });
+            } else {
+              setData(thisAccount);
+              setStateObject(thisAccount);
+              setShowLoader(false);
+              showToast('success', 'Data Deleted Successfully');
+            }
+            // setTimeout(() => navigation.navigate('Home'), 1500);
           })
           .catch(e => {
             setShowLoader(false);
@@ -547,6 +580,8 @@ const AccountDetails = () => {
     prevTransactionType,
     originalData,
     editedData,
+    data,
+    stateObject,
   ]);
   useEffect(() => {
     getTransactions();
